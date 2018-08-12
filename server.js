@@ -129,7 +129,7 @@ app.options( '/spotify/playlistData', ( req, res ) => {
 } )
 
 app.post( '/spotify/playlistData', ( req, res ) => {
-	console.log( "GET /spotify/playlistData", req.body )
+	console.log( "post /spotify/playlistData", req.body )
 	res.set( {
 		"Access-Control-Allow-Origin": "*",
 		'Access-Control-Allow-Headers': "Content-Type"
@@ -195,6 +195,41 @@ app.post( '/spotify/playlistData', ( req, res ) => {
 } )
 
 
+
+// PREVIOUSLY PLAYED REQUEST
+app.options( '/spotify/recentlyPlayed', ( req, res ) => {
+	console.log( "OPTIONS /spotify/recentlyPlayed" )
+	res.set( {
+		"Access-Control-Allow-Origin": "*",
+		"Access-Control-Allow-Methods": "POST, OPTIONS",
+		'Access-Control-Allow-Headers': "Content-Type"
+	} )
+	res.send( "Go to POST" )
+} )
+
+app.post( '/spotify/recentlyPlayed', ( req, res ) => {
+	console.log( "POST /spotify/recentlyPlayed" )
+	res.set( {
+		"Access-Control-Allow-Origin": "*",
+		"Access-Control-Allow-Methods": "POST, OPTIONS",
+		'Access-Control-Allow-Headers': "Content-Type"
+	} )
+	console.log( req.body.access_token )
+	let fetchCode = { 'Authorization': 'Bearer ' + req.body.access_token }
+	request.get( {
+		url: 'https://api.spotify.com/v1/me/player/recently-played?limit=1',
+		headers: fetchCode,
+		json: true
+	}, ( error, response, body ) => {
+		console.log( body.items[ 0 ] )
+		res.send( {
+			Song: {
+				Context: body.items[ 0 ].context.href,
+				Uri: body.items[ 0 ].track.uri
+			}
+		} )
+	} )
+} )
 
 
 
