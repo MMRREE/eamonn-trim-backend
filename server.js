@@ -206,9 +206,44 @@ app.post( '/spotify/playlistData', ( req, res ) => {
 							Playlists: localPlaylists
 						}
 						if ( ServerData.Playlists.length == playlists.total ) {
-							// console.log( ServerData )
-							res.status( 200 )
-								.send( ServerData )
+							let localFavArtists = []
+							request.get( {
+								url: "https://api.spotify.com/v1/me/top/artists",
+								headers: fetchCode,
+								json: true
+							}, ( error, response, favArtists ) => {
+								// console.log( favArtists.items )
+								Promise.all( favArtists.items.map( artistsData => {
+									// let artistsTracks = []
+									request.get( {
+										url: artistsData.href,
+										headers: fetchCode,
+										json: true
+									}, ( error, response, artist ) => {
+										// console.log( artist )
+										localFavArtists.push( {
+											Name: artist.name,
+											ImageUrl: artist.images[ 0 ].url,
+											ContextUri: artist.uri,
+											Songs: [ {
+												Name: "Album",
+												Uri: ""
+											} ]
+										} )
+										ServerData = {
+											User: ServerData.User,
+											Playlists: localPlaylists,
+											FavArtists: localFavArtists
+										}
+										if ( localFavArtists.length == 20 ) {
+											// console.log( localFavArtists )
+											console.log( ServerData )
+											res.status( 200 )
+												.send( ServerData )
+										}
+									} )
+								} ) )
+							} )
 						}
 					} )
 			} )
@@ -245,44 +280,52 @@ app.post( '/spotify/AlbumSearch', ( req, res ) => {
 		headers: fetchCode,
 		json: true
 	}, ( error, response, albums ) => {
-		//console.log( "albums", albums.albums.items )
-		Promise.all( albums.albums.items.map( albumsData => {
-			// console.log( "album", albumsData )
-			let tracks = []
-			// fetch the tracks data for each playlist
-			request.get( {
-				url: albumsData.href,
-				headers: fetchCode,
-				json: true
-			}, ( error, response, album ) => {
-				console.log( album )
-				// make an array of all those tracks
-				if ( album ) {
-					Promise.all( album.tracks.items.map( trackDatas => {
-								// console.log( trackDatas )
-								tracks = {
-									Name: trackDatas.name,
-									Duration: trackDatas.duration_ms / 1000,
-									Uri: trackDatas.uri
-								}
-								return tracks
-							} )
-							// then process the array of all those tracks and include the playlist information with that
-						)
-						.then( promiseData => {
-							tracks = promiseData
-							localAlbums.push( {
-								Name: albumsData.name,
-								ImageUrl: albumsData.images[ 0 ].url,
-								ContextUri: albumsData.uri,
-								Songs: tracks
-							} )
-							console.log( localAlbums )
-							if ( localAlbums.length == 20 ) res.send( localAlbums )
-						} )
-				}
-			} )
-		} ) )
+		// console.log( "albums", albums.albums )
+		if ( albums.error ) {
+			res.send( "API request error" )
+		} else {
+			Promise.all( albums.albums.items.map( albumsData => {
+				// console.log( "album", albumsData )
+				let tracks = []
+				// fetch the tracks data for each playlist
+				request.get( {
+					url: albumsData.href,
+					headers: fetchCode,
+					json: true
+				}, ( error, response, album ) => {
+					//console.log( album )
+					// make an array of all those tracks
+					if ( album ) {
+						if ( album.error ) {
+							res.send( "API request error" )
+						} else {
+							Promise.all( album.tracks.items.map( trackDatas => {
+										// console.log( trackDatas )
+										tracks = {
+											Name: trackDatas.name,
+											Duration: trackDatas.duration_ms / 1000,
+											Uri: trackDatas.uri
+										}
+										return tracks
+									} )
+									// then process the array of all those tracks and include the playlist information with that
+								)
+								.then( promiseData => {
+									tracks = promiseData
+									localAlbums.push( {
+										Name: albumsData.name,
+										ImageUrl: albumsData.images[ 0 ].url,
+										ContextUri: albumsData.uri,
+										Songs: tracks
+									} )
+									//console.log( localAlbums )
+									if ( localAlbums.length == 20 ) res.send( localAlbums )
+								} )
+						}
+					}
+				} )
+			} ) )
+		}
 	} )
 } )
 
