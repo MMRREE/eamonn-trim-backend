@@ -14,18 +14,23 @@ app.use( express.static( 'public' ) )
 let client_id = process.env.CLIENT_ID || null
 let client_secret = process.env.CLIENT_SECRET || null
 
-// TOKEN REQUEST
-
-// OPTIONS FOR /SPOTIFY/TOKEN
-app.options( '/spotify/token', ( req, res ) => {
-	console.log( "OPTIONS /spotify/token" )
+function options ( req, res ) {
+	console.log( "OPTIONS", req.url )
 	res.set( {
 		"Access-Control-Allow-Origin": "*",
 		"Access-Control-Allow-Methods": "POST, OPTIONS",
 		'Access-Control-Allow-Headers': "Content-Type"
 	} )
 	res.send( "Go to POST" )
-} )
+}
+
+// OPTIONS FOR ALL URLS ()
+app.options( '/spotify/token', (req, res) => options(req, res) )
+app.options( '/spotify/playlistData', (req, res) => options(req, res) )
+app.options( '/spotify/AlbumSearch', (req, res) => options(req, res) )
+app.options( '/spotify/transferPlay', (req, res) => options(req, res) )
+app.options( '/spotify/recentlyPlayed', (req, res) => options(req,res) )
+app.options( '/contact/comments', (req, res) => options(req, res) )
 
 // POST TOKEN REQUEST
 
@@ -37,8 +42,8 @@ app.options( '/spotify/token', ( req, res ) => {
 	}
 
 */
-
-app.post( '/spotify/token', ( req, res ) => {
+app.post( '/spotify/token', ( req, res ) => spotifyToken(req, res) )
+async function spotifyToken(req, res){
 	console.log( "POST /spotify/token" )
 	res.set( {
 		"Access-Control-Allow-Origin": "*",
@@ -86,7 +91,7 @@ app.post( '/spotify/token', ( req, res ) => {
 				)
 				break
 			case "refresh_token":
-				// console.log("refresh tok",req.body)
+				console.log("refresh tok",req.body.refresh_token)
 				request.post( {
 						url: 'https://accounts.spotify.com/api/token',
 						method: "POST",
@@ -106,7 +111,7 @@ app.post( '/spotify/token', ( req, res ) => {
 					},
 					( error, response, body ) => {
 						if ( !error && response.statusCode == 200 ) {
-							// console.log( body )
+							console.log( body )
 							body.refresh_token ? res.status( 200 )
 								.send( {
 									"AccessToken": body.access_token,
@@ -126,19 +131,9 @@ app.post( '/spotify/token', ( req, res ) => {
 		}
 	} else res.status( 405 )
 		.send( "FAILED" )
-} )
+}
 
 // PLAYLIST DATA REQUEST
-app.options( '/spotify/playlistData', ( req, res ) => {
-	console.log( "OPTIONS /spotify/playlistData" )
-	res.set( {
-		"Access-Control-Allow-Origin": "*",
-		"Access-Control-Allow-Methods": "POST, OPTIONS",
-		'Access-Control-Allow-Headers': "Content-Type"
-	} )
-	res.send( "Go to POST" )
-} )
-
 app.post( '/spotify/playlistData', ( req, res ) => {
 	console.log( "POST /spotify/playlistData" )
 	res.set( {
@@ -253,16 +248,6 @@ app.post( '/spotify/playlistData', ( req, res ) => {
 } )
 
 // SEARCH ALBUM REQUEST
-app.options( '/spotify/AlbumSearch', ( req, res ) => {
-	console.log( "OPTIONS /spotify/AlbumSearch" )
-	res.set( {
-		"Access-Control-Allow-Origin": "*",
-		"Access-Control-Allow-Methods": "POST, OPTIONS",
-		'Access-Control-Allow-Headers': "Content-Type"
-	} )
-	res.send( "Go to POST" )
-} )
-
 app.post( '/spotify/AlbumSearch', ( req, res ) => {
 	console.log( "POST /spotify/AlbumSearch" )
 	res.set( {
@@ -331,16 +316,6 @@ app.post( '/spotify/AlbumSearch', ( req, res ) => {
 
 
 // TRANSFER PLAY REQUEST
-app.options( '/spotify/transferPlay', ( req, res ) => {
-	console.log( "OPTIONS /spotify/transferPlay" )
-	res.set( {
-		"Access-Control-Allow-Origin": "*",
-		"Access-Control-Allow-Methods": "POST, OPTIONS",
-		'Access-Control-Allow-Headers': "Content-Type"
-	} )
-	res.send( "Go to POST" )
-} )
-
 app.post( '/spotify/transferPlay', ( req, res ) => {
 	console.log( "POST /spotify/transferPlay" )
 	res.set( {
@@ -390,16 +365,6 @@ app.post( '/spotify/transferPlay', ( req, res ) => {
 
 
 // PREVIOUSLY PLAYED REQUEST
-app.options( '/spotify/recentlyPlayed', ( req, res ) => {
-	console.log( "OPTIONS /spotify/recentlyPlayed" )
-	res.set( {
-		"Access-Control-Allow-Origin": "*",
-		"Access-Control-Allow-Methods": "POST, OPTIONS",
-		'Access-Control-Allow-Headers': "Content-Type"
-	} )
-	res.send( "Go to POST" )
-} )
-
 app.post( '/spotify/recentlyPlayed', ( req, res ) => {
 	console.log( "POST /spotify/recentlyPlayed" )
 	res.set( {
@@ -455,18 +420,6 @@ app.post( '/contact/comments', ( req, res ) => {
 		res.send( comments )
 	} )
 } )
-
-app.options( '/contact/comments', ( req, res ) => {
-	console.log( "OPTIONS /contact/comments" )
-	res.set( {
-		"Access-Control-Allow-Origin": "*",
-		"Access-Control-Allow-Methods": "POST, OPTIONS, GET",
-		'Access-Control-Allow-Headers': "Content-Type"
-	} )
-	res.send( "Go to POST" )
-} )
-
-
 
 //Starting listening for the events
 let port = process.env.PORT || 8888
